@@ -1,0 +1,13 @@
+subject,role,party,condition,n1,n2,n3,n4,r1_score,r2_score,r3_score,r4_score,impeachKnowledge,age,gender,feedback
+1,Participant A,Republican,visible,Participant E,Participant F,Participant B,Participant C,5,5,5,5,9,60,Female,I have 3 min. of the timer left and started immediately.  This hit is very underpaid.
+2,Participant B,NA,visible,Participant F,Participant A,Participant C,Participant D,NA,NA,NA,NA,NA,NA,NA,NA
+3,Participant C,NA,visible,Participant A,Participant B,Participant D,Participant E,3,3,3,3,5,40,Female,NA
+4,Participant E,Independent,visible,Participant C,Participant D,Participant F,Participant A,4,4,4,4,NA,NA,NA,NA
+5,Participant D,Republican,visible,Participant B,Participant C,Participant E,Participant F,3,3,3,3,7,36,Male,Everything was good. Maybe a little more time on mturk.
+6,Participant F,Democrat,visible,Participant D,Participant E,Participant A,Participant B,5,5,5,5,8,32,Male,"Too much time because it seemed several participants dropped out. Also, given the complexity of issues and number of things to address, the character limit felt very constrained."
+7,Participant F,NA,notVisible,Participant D,Participant E,Participant A,Participant B,NA,NA,NA,NA,NA,NA,NA,NA
+8,Participant D,NA,notVisible,Participant B,Participant C,Participant E,Participant F,NA,NA,NA,NA,NA,NA,NA,NA
+9,Participant B,Republican,notVisible,Participant F,Participant A,Participant C,Participant D,4,4,4,4,8,64,Male,it was good. i liked it
+10,Participant C,Republican,notVisible,Participant A,Participant B,Participant D,Participant E,4,4,4,4,4,24,Male,Plenty of time!
+11,Participant E,NA,notVisible,Participant C,Participant D,Participant F,Participant A,NA,NA,NA,NA,6,22,Male,please consider me for more.
+12,Participant A,Independent,notVisible,Participant E,Participant F,Participant B,Participant C,3,3,3,3,6,26,Male,NA

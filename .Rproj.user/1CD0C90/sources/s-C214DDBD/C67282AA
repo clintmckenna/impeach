@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1582259117535.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "775083666",
+    "id" : "C67282AA",
+    "lastKnownWriteTime" : 1582310309,
+    "last_content_update" : 1582310400113,
+    "path" : "C:/Users/clint/projects/UROP/impeach/code/dataCleaning.rmd",
+    "project_path" : "code/dataCleaning.rmd",
+    "properties" : {
+        "cursorPosition" : "302,37",
+        "scrollLine" : "271"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

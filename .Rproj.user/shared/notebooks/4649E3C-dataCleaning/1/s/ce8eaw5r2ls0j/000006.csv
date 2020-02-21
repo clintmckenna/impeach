@@ -1,0 +1,7 @@
+"0","# select vars"
+"0","edgelist <- dat %>%"
+"0","  select(subject, condition, sender = role, n1, n2, n3, n4)"
+"0","# reshapre wide to long"
+"0","edgelist <- edgelist %>%"
+"0","  gather(neighbor, value = receiver, c(n1, n2, n3, n4)) %>%"
+"0","  select(sender, receiver, everything())"

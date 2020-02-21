@@ -1,0 +1,556 @@
+---
+title: "figures"
+author: "Clint McKenna"
+date: "February 7, 2020"
+output: html_document
+---
+
+## data prep
+```{r}
+# load packages
+library(ggridges)
+#library(lavaan)
+library(tidyverse)
+
+# set font for figures
+windowsFonts(tnr = windowsFont('Times New Roman'))
+windowsFonts(rbt = windowsFont('Roboto'))
+
+# custom functions
+
+# dplyr select and rename
+select <- dplyr::select
+rename <- dplyr::rename
+
+# ggplot2 alpha
+alpha <- scales::alpha
+
+# function to increase vertical spacing between legend keys
+# @clauswilke
+# https://stackoverflow.com/a/50615868
+draw_key_polygon3 <- function(data, params, size) {
+  lwd <- min(data$size, min(size) / 4)
+
+  grid::rectGrob(
+    width = grid::unit(0.6, "npc"),
+    height = grid::unit(0.6, "npc"),
+    gp = grid::gpar(
+      col = data$colour,
+      fill = alpha(data$fill, data$alpha),
+      lty = data$linetype,
+      lwd = lwd * .pt,
+      linejoin = "mitre"
+    ))
+}
+
+# register new key drawing function, 
+# the effect is global & persistent throughout the R session
+GeomBar$draw_key = draw_key_polygon3
+GeomRidgeline$draw_key = draw_key_polygon3
+
+# specify color palettes
+colPal <- c('#CE3333', '#1098F7', '#5A3471', '#011627')
+UMColPal <- c('#ffcb05', '#407EC9', '#00274c', '#9A3324', '#702082', '#D86018', '#00B2A9') # go blue
+redBlue <- c('#407EC9', '#CE3333')
+
+# load in data
+dat <- readRDS('../data/clean/data.rds') 
+# mouseLong <- readRDS('../data/clean/mouseLong.rds') 
+# datBin <- readRDS('../data/clean/fixations.rds') 
+
+
+
+
+```
+
+
+## numeracy
+```{r}
+# create dataframe for berlin numeracy test
+datBNT <- dat %>%
+  select(subject, bnt, condition) 
+
+# create histogram with facets for party
+p.bnt <- datBNT %>%
+  ggplot(., aes(x = bnt)) +
+    geom_histogram(binwidth = 1, color = 'black', alpha = 0.65, na.rm = TRUE) +
+    stat_bin(aes(y = ifelse(..count.. > 0, ..count.., ''), label = ..count..), geom = 'text', vjust = -.5, size = 8) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 220)) +   
+    scale_fill_manual(values = colPal[2:1]) +
+    labs(
+      title = 'Numeracy',
+      y = 'Count',
+      x = 'Numeracy Score',
+      fill = 'Condition'
+      ) + 
+    theme_bw() +
+    theme(
+      text = element_text(family = 'tnr', size = 24),
+      #title = element_text(size = 32),
+      plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5), 
+      axis.title.x = element_text(margin = margin(20, 0, 0, 0)), 
+      axis.title.y = element_text(margin = margin(0, 20, 0, 0)), 
+      axis.ticks.y = element_blank(),
+      axis.ticks.x = element_blank(),
+      strip.background = element_rect(fill = 'white'),
+      legend.key = element_rect(size = 5, color = 'white'),
+      legend.key.size = unit(2.5, 'lines'),
+      panel.spacing = unit(1.5, 'lines')) +
+    facet_wrap(~ condition)
+
+
+# save to file
+png('../figures/bnt.png', units = 'in', width = 12, height = 8, res = 750)
+plot(p.bnt)
+dev.off()
+
+
+# remove clutter
+rm(p.bnt, datBNT)
+
+
+```
+
+
+
+<!-- ## gun control beliefs -->
+<!-- ```{r} -->
+<!-- # create dataframe for pew gun items -->
+<!-- datGun <- dat %>% -->
+<!--   select(subject, gunAtt, condition, party) %>% -->
+<!--   filter(party == 'Republican' | party == 'Democrat') -->
+
+<!-- # create histogram with facets for party -->
+<!-- p.gun <- datGun %>% -->
+<!--   ggplot(., aes(x = gunAtt, fill = party)) + -->
+<!--     geom_histogram(binwidth = .25, color = 'black', alpha = 0.65, na.rm = TRUE) + -->
+<!--     scale_y_continuous(expand = c(0, 0), limits = c(0, 100)) +    -->
+<!--     scale_fill_manual(values = colPal[2:1]) + -->
+<!--     labs( -->
+<!--       title = 'Support for Gun Control', -->
+<!--       y = 'Count', -->
+<!--       x = 'Gun Control Favorability Score', -->
+<!--       fill = NULL -->
+<!--       ) +  -->
+<!--     theme_bw() + -->
+<!--     theme( -->
+<!--       text = element_text(family = 'tnr', size = 24), -->
+<!--       #title = element_text(size = 32), -->
+<!--       plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5),  -->
+<!--       axis.title.x = element_text(margin = margin(20, 0, 0, 0)),  -->
+<!--       axis.title.y = element_text(margin = margin(0, 20, 0, 0)),  -->
+<!--       axis.ticks.y = element_blank(), -->
+<!--       axis.ticks.x = element_blank(), -->
+<!--       strip.background = element_rect(fill = 'white'), -->
+<!--       legend.key = element_rect(size = 5, color = 'white'), -->
+<!--       legend.key.size = unit(2.5, 'lines'), -->
+<!--       panel.spacing = unit(1.5, 'lines')) + -->
+<!--     facet_wrap(~ party) -->
+
+
+<!-- # save to file -->
+<!-- png('../figures/gun.png', units = 'in', width = 12, height = 8, res = 750) -->
+<!-- plot(p.gun) -->
+<!-- dev.off() -->
+
+
+<!-- # remove clutter -->
+<!-- rm(p.gun, datGun) -->
+
+
+<!-- ``` -->
+
+
+<!-- ## leaners -->
+<!-- ```{r} -->
+<!-- # select vars and summarise -->
+<!-- datLean <- dat %>% -->
+<!--   select(party, studyChoice4pt) %>% -->
+<!--   filter(party == 'Republican' | party == 'Democrat') %>% -->
+<!--   group_by(party) %>% -->
+<!--   count(studyChoice4pt) %>% -->
+<!--   na.omit() %>% -->
+<!--   mutate(correct = case_when( -->
+<!--     studyChoice4pt == 1 ~ 'Incorrect', -->
+<!--     studyChoice4pt == 2 ~ 'Lean Incorrect', -->
+<!--     studyChoice4pt == 3 ~ 'Lean Correct', -->
+<!--     studyChoice4pt == 4 ~ 'Correct', -->
+<!--     TRUE ~ NA_character_)) -->
+
+<!-- # reorder levels -->
+<!-- datLean$correct <- factor(datLean$correct, -->
+<!--                           levels = c('Incorrect', 'Lean Incorrect', 'Lean Correct', 'Correct'), -->
+<!--                           labels = c('Incorrect', 'Lean Incorrect', 'Lean Correct', 'Correct')) -->
+
+
+
+<!-- # create histogram with facets for party -->
+<!-- p.lean <- datLean %>% -->
+<!--   ggplot(., aes(x = correct, y = n, fill = correct)) + -->
+<!--     geom_bar(stat = 'identity', color = 'black', alpha = 0.65, na.rm = TRUE) + -->
+<!--     scale_y_continuous(expand = c(0, 0), limits = c(0, 300)) +    -->
+<!--     scale_fill_manual(values = colPal[4:1]) + -->
+<!--     labs( -->
+<!--       title = 'Correct Study Interpretation', -->
+<!--       y = 'Count', -->
+<!--       x = 'Response', -->
+<!--       fill = NULL -->
+<!--       ) +  -->
+<!--     theme_bw() + -->
+<!--     theme( -->
+<!--       text = element_text(family = 'rbt', size = 24), -->
+<!--       #title = element_text(size = 32), -->
+<!--       plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5),  -->
+<!--       axis.title.x = element_text(margin = margin(20, 0, 0, 0)),  -->
+<!--       axis.title.y = element_text(margin = margin(0, 20, 0, 0)),  -->
+<!--       axis.ticks.y = element_blank(), -->
+<!--       axis.ticks.x = element_blank(), -->
+<!--       axis.text.x = element_text(angle = 45, hjust = .5, vjust = .5),  -->
+<!--       strip.background = element_rect(fill = 'white'), -->
+<!--       legend.position = 'none', -->
+<!--       # legend.key.size = unit(2.5, 'lines'), -->
+<!--       panel.spacing = unit(1.5, 'lines')) + -->
+<!--     facet_wrap(~ party) -->
+
+<!-- # save to file -->
+<!-- png('../figures/lean.png', units = 'in', width = 12, height = 8, res = 750) -->
+<!-- plot(p.lean) -->
+<!-- dev.off() -->
+
+
+<!-- # remove clutter -->
+<!-- rm(p.lean, datLean)   -->
+
+
+
+
+
+
+
+
+
+<!-- ``` -->
+
+
+
+
+
+<!-- ## plot studyChoice01 -->
+<!-- ```{r} -->
+<!-- # select vars -->
+<!-- datCorrect <- dat %>% -->
+<!--   select(condition, bnt, gunFriendly, studyChoice01) %>% -->
+<!--   na.omit() -->
+
+
+<!-- # create plot -->
+<!-- p.correct <- datCorrect %>% -->
+<!--   ggplot(., aes(x = gunFriendly, y = as.numeric(studyChoice01) - 1, group = condition, color = condition, fill = condition)) + -->
+<!--     geom_point(size = .75, position = position_jitter(height = 0.05, width = 0.2)) +  -->
+<!--     stat_smooth(method = 'glm', method.args = list(family = 'binomial'), formula = y ~ x, alpha = 0.2, size = 1, aes(fill = condition, alpha = .6)) + -->
+<!--     scale_color_manual(values = colPal[1:4], guide = 'none') + -->
+<!--     # guides(color = guide_legend(override.aes = list(fill = 'transparent'))) + -->
+<!--     scale_fill_manual(values = colPal[1:4]) + -->
+<!--       labs( -->
+<!--       title = 'Correct Study Interpretation', -->
+<!--       x = 'Friendly Attitude to Correct Answer', -->
+<!--       y = 'Pr (Correct Response)', -->
+<!--       # caption = '\nFriendly x Crime/Rash Condition OR = 1.65, p = .023', -->
+<!--       fill = NULL, -->
+<!--       color = NULL) + -->
+<!--     theme_bw() + -->
+<!--     theme( -->
+<!--         text = element_text(family = 'rbt', size = 24), -->
+<!--         #title = element_text(size = 32), -->
+<!--         plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5),  -->
+<!--         axis.title.x = element_text(margin = margin(20, 0, 0, 0)),  -->
+<!--         axis.title.y = element_text(margin = margin(0, 20, 0, 0)),  -->
+<!--         axis.ticks.y = element_blank(), -->
+<!--         axis.ticks.x = element_blank(), -->
+<!--         strip.background = element_rect(fill = 'white'), -->
+<!--         # legend.key = element_rect(size = 5, color = 'white'), -->
+<!--         # legend.key.size = unit(2.5, 'lines'), -->
+<!--         legend.position = 'none', -->
+<!--         panel.spacing = unit(1.5, 'lines')) +   -->
+<!--     facet_wrap(~ condition) -->
+
+
+
+<!-- # save to file -->
+<!-- png('../figures/correctFriendly.png', units = 'in', width = 12, height = 8, res = 1500) -->
+<!-- plot(p.correct) -->
+<!-- dev.off() -->
+
+
+<!-- # remove clutter -->
+<!-- rm(p.correct, datCorrect) -->
+
+<!-- ``` -->
+
+
+<!-- ## self-reported strategy -->
+<!-- ```{r} -->
+
+<!-- # create dataframe for strat02 -->
+<!-- datStrat <- dat %>% -->
+<!--   select(condition, bnt, gunFriendly, strat01) %>% -->
+<!--   na.omit() -->
+
+
+<!-- # create plot -->
+<!-- p.strat <- datStrat %>% -->
+<!--   ggplot(., aes(x = gunFriendly, y = as.numeric(strat01), group = condition, color = condition, fill = condition)) + -->
+<!--     geom_point(size = .75, position = position_jitter(height = 0.05, width = 0.2)) +  -->
+<!--     stat_smooth(method = 'glm', method.args = list(family = 'binomial'), formula = y ~ x, alpha = 0.2, size = 1, aes(fill = condition, alpha = .6)) + -->
+<!--     scale_color_manual(values = colPal[1:4], guide = 'none') + -->
+<!--     # guides(color = guide_legend(override.aes = list(fill = 'transparent'))) + -->
+<!--     scale_fill_manual(values = colPal[1:4]) + -->
+<!--       labs( -->
+<!--       title = 'Correct Strategy (Compare Cell Ratios)', -->
+<!--       x = 'Friendly Attitude to Correct Answer', -->
+<!--       y = 'Pr (Correct Strategy)', -->
+<!--       # caption = '\nFriendly x Crime/Rash Condition OR = .75, p = .23', -->
+<!--       fill = NULL, -->
+<!--       color = NULL) + -->
+<!--     theme_bw() + -->
+<!--     theme( -->
+<!--         text = element_text(family = 'rbt', size = 24), -->
+<!--         #title = element_text(size = 32), -->
+<!--         plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5),  -->
+<!--         axis.title.x = element_text(margin = margin(20, 0, 0, 0)),  -->
+<!--         axis.title.y = element_text(margin = margin(0, 20, 0, 0)),  -->
+<!--         axis.ticks.y = element_blank(), -->
+<!--         axis.ticks.x = element_blank(), -->
+<!--         strip.background = element_rect(fill = 'white'), -->
+<!--         # legend.key = element_rect(size = 5, color = 'white'), -->
+<!--         # legend.key.size = unit(2.5, 'lines'), -->
+<!--         legend.position = 'none', -->
+<!--         panel.spacing = unit(1.5, 'lines')) +   -->
+<!--     facet_wrap(~ condition) -->
+
+
+<!-- # save to file -->
+<!-- png('../figures/stratFriendly.png', units = 'in', width = 12, height = 8, res = 750) -->
+<!-- plot(p.strat) -->
+<!-- dev.off() -->
+
+
+<!-- # remove clutter -->
+<!-- rm(p.strat, datStrat) -->
+<!-- ``` -->
+
+
+
+
+## friendly Attitude Scores predicting cell transitions
+```{r}
+
+# create dataframe for strat02
+datTransitions <- dat %>%
+  select(condition, bnt, thermoFriendly, totalTransitions) %>%
+  na.omit()
+
+
+# create plot
+p.tF <- datTransitions %>%
+  ggplot(., aes(x = thermoFriendly, y = totalTransitions, group = condition, color = condition, fill = condition)) +
+    geom_point(size = .75, position = position_jitter(height = 0.05, width = 0.2)) + 
+    stat_smooth(method = 'lm', formula = y ~ x, alpha = 0.15, size = 1.5, aes(fill = condition, alpha = .7)) +
+    scale_y_continuous(limits = c(0, 50), expand = c(0, 0)) +
+    scale_color_manual(values = colPal[1:4], guide = 'none') +
+    # guides(color = guide_legend(override.aes = list(fill = 'transparent'))) +
+    scale_fill_manual(values = colPal[1:4]) +
+      labs(
+      title = 'Transitions by Attitude',
+      x = 'Thermometer (Chiefs - 49ers)',
+      y = '# Transitions',
+      # caption = '\nNegative-binomial Regression\nFriendly x Crime/Rash Condition B = .05, p = .34',
+      fill = NULL,
+      color = NULL) +
+    theme_bw() +
+    theme(
+        text = element_text(family = 'rbt', size = 24),
+        #title = element_text(size = 32),
+        plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5), 
+        axis.title.x = element_text(margin = margin(20, 0, 0, 0)), 
+        axis.title.y = element_text(margin = margin(0, 20, 0, 0)), 
+        axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = 'white'),
+        # legend.key = element_rect(size = 5, color = 'white'),
+        # legend.key.size = unit(2.5, 'lines'),
+        legend.position = 'none',
+        panel.spacing = unit(1.5, 'lines')) +  
+    facet_wrap(~ condition)
+
+
+# save to file
+png('../figures/transitionsFriendly.png', units = 'in', width = 12, height = 8, res = 750)
+plot(p.tF)
+dev.off()
+
+
+# remove clutter
+rm(p.tF, datTransitions)
+```
+
+
+
+
+
+
+## transitions prediction studyChoice01 and strat01
+
+```{r}
+# create dataframe for strat02
+# datCorrect <- dat %>%
+#   group_by(condition, republican) %>%
+#   #filter(party == 'Republican' | party == 'Democrat') %>%
+#   summarise(Correct = mean(as.numeric(studyChoice01), na.rm = TRUE)) %>%
+#   mutate(Incorrect = 1 - Correct) %>%
+#   na.omit()
+
+# convert to long format
+# datCorrect <- datCorrect %>%
+  # gather(Result, value = Percent, c(Correct, Incorrect)) 
+
+datTPredict <- dat %>%
+  select(subject, condition, bnt, strat01, studyChoice01, totalTransitions) %>%
+  mutate(studyChoice01 = as.numeric(studyChoice01) - 1) %>%
+  mutate(`Reported Strategy` = strat01,
+         `Reported Interpretation` = studyChoice01) %>%
+  na.omit() %>%
+  gather(var, value = response, c(`Reported Strategy`, `Reported Interpretation`))
+
+# create plot
+p.TPredict <- datTPredict %>%
+  #filter(var == 'strat01') %>%
+  ggplot(., aes(x = totalTransitions, y = as.numeric(response))) +
+    geom_point(size = .75, position = position_jitter(height = 0.05, width = 0.2)) + 
+    stat_smooth(method = 'glm', method.args = list(family = 'binomial'), formula = y ~ x, alpha = 0.2, size = 1, aes(alpha = .6)) +
+    scale_color_manual(values = colPal[2:1], guide = 'none') +
+    scale_x_continuous(limits = c(0, 85)) +
+    guides(color = guide_legend(override.aes = list(fill = 'transparent'))) +
+    scale_fill_manual(values = colPal[2:1]) +
+      labs(
+      title = 'Transitions Predicting Self-Report',
+      x = '# Transitions',
+      y = 'Pr (Correct Response)',
+      # caption = '\nCorrect OR = 1.03, p < .001\nStrat OR = 1.03, p < .001\nr\'s .22 - .26',
+
+      fill = NULL,
+      color = NULL) +
+    theme_bw() +
+    theme(
+        text = element_text(family = 'rbt', size = 24),
+        #title = element_text(size = 32),
+        plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5), 
+        axis.title.x = element_text(margin = margin(20, 0, 0, 0)), 
+        axis.title.y = element_text(margin = margin(0, 20, 0, 0)), 
+        axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = 'white'),
+        legend.key = element_rect(size = 5, color = 'white'),
+        legend.key.size = unit(2.5, 'lines'),
+        panel.spacing = unit(1.5, 'lines')) +
+  facet_grid(~var)
+
+
+
+# save to file
+png('../figures/tPredictFriendly.png', units = 'in', width = 12, height = 8, res = 1500)
+plot(p.TPredict)
+dev.off()
+
+
+# remove clutter
+rm(p.TPredict, datTPredict)
+
+```
+
+
+
+
+
+
+
+## conjunction fallacy
+```{r}
+
+# create dataframe for conjunction fallacy items
+datConjunction <- dat %>%
+    select(subject, conjunctionCondition, conjunctionLose, conjunctionWin, conjunctionNFL, conjunctionChiefs, thermoFriendly) %>%
+  na.omit() %>%
+  mutate(condition = as.factor(conjunctionCondition))
+
+
+# reshape to long format
+datConjunction <- datConjunction %>%
+  gather('conjunctionWin', 'conjunctionLose', key = outcome, value = conjunction01)
+
+
+
+
+# reorder factor
+datConjunction$condition = fct_relevel(datConjunction$condition, c('KC', 'SF', 'HTC', 'SRR'))
+
+
+# rename conditions for plotting
+datConjunction <- datConjunction %>%
+  mutate(condition = fct_recode(as.factor(condition), 
+                                `Kansas City Chiefs` = 'KC',
+                                `San Francisco 49ers` = 'SF',
+                                `Hamilton Tiger Cats` = 'HTC',
+                                `Saskatchewan Roughriders` = 'SRR')) %>%
+  mutate(outcome = fct_recode(as.factor(outcome), 
+                                `Team Loses` = 'conjunctionLose',
+                                `Team Wins` = 'conjunctionWin'))
+
+
+
+
+
+# create plot
+p.conjunction <- datConjunction %>%
+  ggplot(., aes(x = thermoFriendly, y = as.numeric(conjunction01), group = outcome, color = outcome, fill = outcome)) +
+    geom_point(size = .75, position = position_jitter(height = 0.05, width = 0.2)) +
+    stat_smooth(method = 'glm', method.args = list(family = 'binomial'), formula = y ~ x, alpha = 0.2, size = 1, aes(fill = outcome, alpha = .6)) +
+    scale_color_manual(values = rep(redBlue, 2), guide = 'none') +
+    guides(color = guide_legend(override.aes = list(fill = 'transparent'))) +
+    scale_fill_manual(values = rep(redBlue, 2)) +
+      labs(
+      title = 'Conjunction Fallacy',
+      x = 'Feeling Thermometer (Chiefs - 49ers)',
+      y = 'Pr (Fallacy)',
+      # caption = '\nFriendly x Crime/Rash Condition OR = .75, p = .23',
+      caption = '\nFitted lines estimate logistic model',
+      fill = NULL,
+      color = NULL) +
+    theme_bw() +
+    theme(
+        text = element_text(family = 'rbt', size = 24),
+        #title = element_text(size = 32),
+        plot.title = element_text(margin = margin(0, 0, 20, 0), hjust = 0.5),
+        axis.title.x = element_text(margin = margin(20, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 20, 0, 0)),
+        axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = 'white'),
+        legend.key = element_rect(size = 5, color = 'white'),
+        legend.key.size = unit(2.5, 'lines'),
+        # legend.position = 'none',
+        panel.spacing = unit(1.5, 'lines')) +
+    facet_wrap(~ condition)
+
+
+# save to file
+png('../figures/conjunction.png', units = 'in', width = 12, height = 8, res = 500)
+plot(p.conjunction)
+dev.off()
+
+
+# remove clutter
+rm(p.conjunction, datConjunction)
+```
+
+
