@@ -1,0 +1,3 @@
+"0","p <- p +"
+"0","  scale_color_manual(values = c('#FFCB05', '#00274C'))"
+"0","p"

@@ -1,0 +1,4 @@
+"0","# limits arguemnt is upper and lower bound for y-axis"
+"0","p <- p +"
+"0","  scale_y_continuous(limits = c(1, 5))"
+"0","p"

@@ -24,23 +24,334 @@ edgelist <- read_csv('../data/edgelist.csv')
 ```
 
 
+## prepare network object
 ```{r}
 # for the next steps, we need to move title to the last column
 edge1 <- edgelist %>%
   filter(condition == 'visible') %>%
   select(sender, receiver, subject)
 
+# remove 'Participant ' from edgelist text
+edge1$sender <- gsub('Participant ', '', edge1$sender)
+edge1$receiver <- gsub('Participant ', '', edge1$receiver)
+
+
+# retrieve vertex scores from initial dataset
+vertexScores <- dat %>%
+  filter(condition == 'visible') %>%
+  select(role, r1_score, r2_score, r3_score, r4_score)
+
+# change NA to 0 for now...
+# vertexScores$r1_score[is.na(vertexScores$r1_score)] <- 0
+
+
+# removing text from role in vertexScores
+vertexScores$role <- gsub('Participant ', '', vertexScores$role)
+
+# create color palette function for each score
+# vertexScores$vColors <- c('red', 'white', 'red', 'white', 'red', 'white')
+colR <- colorRampPalette(c('red', 'white'))
+# assign it to an object with 6 colors
+colPal <- colR(6)
+
+# assign color gradient depending on r1_score
+vertexScores <- vertexScores %>%
+  mutate(
+    r1_colors = case_when(
+      is.na(r1_score) ~ colPal[1],
+      r1_score == 1 ~ colPal[2],
+      r1_score == 2 ~ colPal[3],
+      r1_score == 3 ~ colPal[4],
+      r1_score == 4 ~ colPal[5],
+      r1_score == 5 ~ colPal[6]),
+    r2_colors = case_when(
+      is.na(r2_score) ~ colPal[1],
+      r2_score == 1 ~ colPal[2],
+      r2_score == 2 ~ colPal[3],
+      r2_score == 3 ~ colPal[4],
+      r2_score == 4 ~ colPal[5],
+      r2_score == 5 ~ colPal[6]),
+    r3_colors = case_when(
+      is.na(r3_score) ~ colPal[1],
+      r3_score == 1 ~ colPal[2],
+      r3_score == 2 ~ colPal[3],
+      r3_score == 3 ~ colPal[4],
+      r3_score == 4 ~ colPal[5],
+      r3_score == 5 ~ colPal[6]),
+    r4_colors = case_when(
+      is.na(r4_score) ~ colPal[1],
+      r4_score == 1 ~ colPal[2],
+      r4_score == 2 ~ colPal[3],
+      r4_score == 3 ~ colPal[4],
+      r4_score == 4 ~ colPal[5],
+      r4_score == 5 ~ colPal[6]))
+
+
+
+# sort edgelist by sender
+edge1 <- edge1[order(edge1$sender),]
+vertexScores <- vertexScores[order(vertexScores$role),]
+
+
 # create network object. non-directed
 net <- graph_from_data_frame(
   edge1,
-  directed = FALSE
+  directed = FALSE,
+  vertices = vertexScores
 )
 
-# plot
-plot(edge1)
+
 
 ```
 
+
+## preview one time point
+```{r}
+plot(net,
+     layout = layout_in_circle,
+     # layout = layout_nicely,
+     vertex.label.cex = 2,
+     # vertex.label.family = 'Times',
+     # vertex.label.font=20,
+     vertex.label.color='black',
+     # vertex.label = NA,
+     # vertex.shape='circle', 
+     # vertex.size = degree(net)*2,
+     vertex.size = 20,
+     # vertex.color = 'light blue',
+     # vertex.color = vertex_attr(net)$r1_score,
+     vertex.color = vertex_attr(net)$r1_colors,
+     edge.curved = FALSE,
+     edge.width = 2)
+
+```
+
+
+
+## plot all time points
+make sure to run this entire code chunk at once
+```{r}
+
+# set file name, dimensions, and resolution
+png('../figures/net.png', units = 'in', width = 16, height = 4, res = 750)
+
+# arrage 4 plots in a line
+par(mfrow=c(1,4), family = 'Sen')
+
+# baseline (time 1)
+plot(net,
+     layout = layout_in_circle,
+     vertex.label.cex = 2,
+     vertex.label.color='black',
+     vertex.size = 75,
+     vertex.color = vertex_attr(net)$r1_colors,
+     edge.curved = FALSE,
+     edge.width = 2)
+title(main = 'Baseline', cex.main = 2.5)
+
+# round 1 (time 2)
+plot(net,
+     layout = layout_in_circle,
+     vertex.label.cex = 2,
+     vertex.label.color='black',
+     vertex.size = 75,
+     vertex.color = vertex_attr(net)$r2_colors,
+     edge.curved = FALSE,
+     edge.width = 2)
+title(main = 'Round 1', cex.main = 2.5)
+
+# Round 2 (time 3)
+plot(net,
+     layout = layout_in_circle,
+     vertex.label.cex = 2,
+     vertex.label.color='black',
+     vertex.size = 75,
+     vertex.color = vertex_attr(net)$r3_colors,
+     edge.curved = FALSE,
+     edge.width = 2)
+title(main = 'Round 2', cex.main = 2.5)
+
+# round 3 (time 4)
+plot(net,
+     layout = layout_in_circle,
+     vertex.label.cex = 2,
+     vertex.label.color='black',
+     vertex.size = 75,
+     vertex.color = vertex_attr(net)$r4_colors,
+     edge.curved = FALSE,
+     edge.width = 2)
+title(main = 'Round 3', cex.main = 2.5)
+
+# save to file
+dev.off()
+
+```
+
+
+
+
+
+
+## ggraph package
+```{r}
+
+library(ggraph)
+
+ggraph(net, layout = 'circle') +
+  geom_edge_link() +
+  geom_node_point(aes(color = V(net)$r1_score), size = 10, alpha = .75) +
+  scale_color_gradient(low = 'red', high = 'light blue') +
+  labs(
+    title = 'Baseline',
+    color = 'Response Accuracy') +
+  theme_graph()
+
+
+
+```
+
+
+
+
+
+The nice thing about ggplot2 based plots is that its easier to facet. Lets make a net object with all the data and facet in ggraph.
+```{r}
+
+
+# for the next steps, we need to move title to the last column
+edge1 <- edgelist %>%
+  select(sender, receiver, condition, subject)
+
+# rename participant roles for each condition, for both sender and receiver
+edge1 <- edge1 %>%
+  mutate(
+    sender = case_when(
+      condition == 'visible' ~ gsub('Participant ', 'visible_', .$sender),
+      condition == 'notVisible' ~ gsub('Participant ', 'notVisible_', .$sender)),
+    receiver = case_when(
+      condition == 'visible' ~ gsub('Participant ', 'visible_', .$receiver),
+      condition == 'notVisible' ~ gsub('Participant ', 'notVisible_', .$receiver)))
+
+# retrieve vertex scores from initial dataset
+vertexScores <- dat %>%
+  select(sender = role, condition, r1_score, r2_score, r3_score, r4_score)
+# rename participant roles for each condition
+vertexScores <- vertexScores %>%
+  mutate(sender = case_when(
+    condition == 'visible' ~ gsub('Participant ', 'visible_', .$sender),
+    condition == 'notVisible' ~ gsub('Participant ', 'notVisible_', .$sender)))
+
+
+
+# sort edgelist by sender
+edge1 <- edge1[order(edge1$sender),]
+vertexScores <- vertexScores[order(vertexScores$sender),]
+
+# only edgelist vals
+edge2 <- edge1 %>% select(sender, receiver)
+
+# create network object. non-directed
+net <- graph_from_data_frame(
+  edge2,
+  directed = FALSE,
+  vertices = vertexScores
+)
+
+
+```
+
+
+
+```{r}
+
+ggraph(net, layout = 'circle') +
+  geom_edge_link() +
+  geom_node_point(aes(color = V(net)$r1_score), size = 10, alpha = .75) +
+  scale_color_gradient(low = 'red', high = 'light blue') +
+  labs(
+    title = 'Baseline',
+    color = 'Response Accuracy') +
+  theme_graph() +
+  facet_grid(~ V(net)$condition)
+
+```
+
+No idea why it is preserving the nodes not present in one condition over another...
+
+
+
+## patchwork
+Another option is using patchwork package. Here, we will "glue" a bunch of plots together.
+```{r}
+
+# visible condition
+visible_edge1 <- edge1 %>% 
+  filter(condition == 'visible') %>%
+  select(sender, receiver)
+visible_vertexScores <- vertexScores %>%
+  filter(condition == 'visible')
+# create network object. non-directed
+netVisible <- graph_from_data_frame(
+  visible_edge1,
+  directed = FALSE,
+  vertices = visible_vertexScores
+)
+
+
+
+# notVisible condition
+notVisible_edge1 <- edge1 %>% 
+  filter(condition == 'notVisible') %>%
+  select(sender, receiver)
+notVisible_vertexScores <- vertexScores %>%
+  filter(condition == 'notVisible')
+# create network object. non-directed
+netNotVisible <- graph_from_data_frame(
+  notVisible_edge1,
+  directed = FALSE,
+  vertices = notVisible_vertexScores
+)
+
+```
+
+## plot
+```{r}
+
+library(patchwork)
+
+# visible
+p1 <- ggraph(netVisible, layout = 'circle') +
+  geom_edge_link() +
+  geom_node_point(aes(color = V(netVisible)$r1_score), size = 10, alpha = .75) +
+  scale_color_gradient(low = 'red', high = 'light blue') +
+  labs(
+    title = 'Visible',
+    color = 'Response Accuracy') +
+  theme_graph() +
+  theme(legend.position = 'none')
+
+# not visible
+p2 <- ggraph(netNotVisible, layout = 'circle') +
+  geom_edge_link() +
+  geom_node_point(aes(color = V(netNotVisible)$r1_score), size = 10, alpha = .75) +
+  scale_color_gradient(low = 'red', high = 'light blue') +
+  labs(
+    title = 'Not Visible',
+    color = 'Response Accuracy',
+    caption = 'Grey nodes indicate NA values') +
+  theme_graph()
+
+
+# output both plots
+p1 + p2
+
+
+# can also save to file in same way as before (run these lines altogether)
+png('../figures/ggnet.png', units = 'in', width = 12, height = 4, res = 750)
+p1 + p2
+dev.off()
+
+```
 
 
 

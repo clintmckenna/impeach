@@ -1,0 +1,6 @@
+"0","p <- rounds %>%"
+"0","  ggplot(., aes(x = round, y = score, color = condition, group = condition)) +"
+"0","    geom_point(position = position_jitter(height = 0.05, width = 0.2),"
+"0","               size = 2.5,"
+"0","               alpha = .5) "
+"0","p"

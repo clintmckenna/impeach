@@ -1,0 +1,46 @@
+"0","# load packages"
+"0","library(tidyverse)"
+"0","# custom functions"
+"0","# dplyr select"
+"0","select <- dplyr::select"
+"0","# read in data seperately"
+"0","dat <- read_csv('../data/data.csv')"
+"2","Parsed with column specification:
+cols(
+  subject = col_integer(),
+  role = col_character(),
+  party = col_character(),
+  condition = col_character(),
+  n1 = col_character(),
+  n2 = col_character(),
+  n3 = col_character(),
+  n4 = col_character(),
+  r1_score = col_integer(),
+  r2_score = col_integer(),
+  r3_score = col_integer(),
+  r4_score = col_integer(),
+  impeachKnowledge = col_integer(),
+  age = col_integer(),
+  gender = col_character(),
+  feedback = col_character()
+)
+"
+"0","rounds <- read_csv('../data/rounds.csv')"
+"2","Parsed with column specification:
+cols(
+  subject = col_integer(),
+  round = col_integer(),
+  response = col_character(),
+  score = col_integer()
+)
+"
+"0","edgelist <- read_csv('../data/edgelist.csv')"
+"2","Parsed with column specification:
+cols(
+  sender = col_character(),
+  receiver = col_character(),
+  subject = col_integer(),
+  condition = col_character(),
+  neighbor = col_character()
+)
+"

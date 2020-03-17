@@ -1,0 +1,487 @@
+## metal gear codec bot 
+## written by Clint McKenna
+## last updated 10.20.16
+
+# set working directory
+setwd("C:/Users/Clint/Google Drive/sync/Projects/R stuff/metal gear")
+
+# load required packages
+require(dplyr)
+require(stringr)
+require(tm)
+require(wordcloud)
+require(RColorBrewer)
+require(tau)
+require(quanteda)
+require(tidytext)
+require(tidyr)
+require(ggplot2)
+require(viridis)
+require(igraph)
+require(ggraph)
+
+
+
+require(extrafont)
+loadfonts()
+
+
+
+# fetch codec scripts from junkerhq
+download.file("http://junkerhq.net/files/MGS_FullText.zip", "mgs1.zip")
+download.file("http://junkerhq.net/files/MGS2_textdump.zip", "mgs2.zip")
+
+# read text from zip files
+mgsd1 <- readLines(unz("mgs1.zip", "MGS_Disk1.txt"))  ## Metal Gear Solid, disc 1
+mgsd2 <- readLines(unz("mgs1.zip", "MGS_Disk2.txt"))  ## Metal Gear Solid, disc 2
+mgs2 <- readLines(unz("mgs2.zip", "MGS2_text.txt"))   ## Metal Gear Solid 2
+closeAllConnections()
+
+# convert objects to data frames
+mgsd1 <- as.data.frame(mgsd1)
+mgsd2 <- as.data.frame(mgsd2)
+mgs2  <- as.data.frame(mgs2)
+
+###### Cleaning up the text! ######
+
+### Metal Gear Solid 1, disc 1
+# drop rows after 8812, which seem to contain misc text (section IV and beyond)
+# e.g. "previously on Metal Gear..." narration
+mgsd1 <- as.data.frame(mgsd1[-(8812:9841),])
+# remove subheadings for II and III.
+# III. Briefing and more Codec text
+mgsd1 <- as.data.frame(mgsd1[-(5099:5103),])
+# II. Full Codec Call text dump
+mgsd1 <- as.data.frame(mgsd1[-(1503:1507),])
+# drop rows before 32 (where dialogue begins)
+mgsd1 <- as.data.frame(mgsd1[-(1:32),])
+# split rows after ": ", which occurs after every address, and keep only text column
+mgsd1 <- str_split_fixed(mgsd1[,1], ": ", 2)[,2]
+
+### Metal Gear Solid 1, disc 2
+# drop rows before 6 (where dialogue begins)
+mgsd2 <- as.data.frame(mgsd2[-(1:6),])
+# split rows after ": ", which occurs after every address, and keep only text column
+mgsd2 <- str_split_fixed(mgsd2[,1], ": ", 2)[,2]
+
+# combine MGS1 discs and remove duplicate lines
+mgs1 <- as.data.frame(c(mgsd1, mgsd2))
+mgs1 <- mgs1[!duplicated(mgs1[,1]), ]
+mgs1 <- as.data.frame(mgs1)
+
+### Metal Gear Solid 2
+# remove everything after codec dump
+mgs2 <- as.data.frame(mgs2[-(8186:8351),])
+# remove title for Codec dump (section II)
+mgs2 <- as.data.frame(mgs2[-(1017:1023),])
+# remove title for I.2 real game text
+mgs2 <- as.data.frame(mgs2[-(179:182),])
+# remove everything before demo disc text starts
+mgs2 <- as.data.frame(mgs2[-(1:42),])
+# split rows after ": ", which occurs after every address, and keep only text column
+mgs2 <- str_split_fixed(mgs2[,1], ": ", 2)[,2]
+
+# remove duplicated lines
+mgs2 <- as.data.frame(mgs2)
+mgs2 <- mgs2[!duplicated(mgs2[,1]), ]
+mgs2 <- as.data.frame(mgs2)
+
+# remove clutter
+rm(mgsd1, mgsd2)
+
+
+
+
+
+### Wordcloud creation
+## mgs1
+wc <- mgs1[,1]
+
+#wc <- gsub("...", "ZZZ", wc, fixed = TRUE)
+# fixed a couple of the common names, and stemmed the word "weapons"
+wc <- gsub("Metal Gear", "metal_gear", wc, fixed = TRUE)
+wc <- gsub("Mei Ling", "mei_ling", wc, fixed = TRUE)
+wc <- gsub("weapons", "weapon", wc, fixed = TRUE)
+wc <- gsub("Weapons", "weapon", wc, fixed = TRUE)
+# convert text into corpus
+wc <- Corpus(DataframeSource(as.matrix(wc)))
+# (for corpus text) convert to lowercase, remove punctuation, and drop stopwords.
+#test <- tm_map(test, function(x) removeWords(x,stopwords()))
+wc <- tm_map(wc, tolower)
+wc <- tm_map(wc, removeWords, stopwords("SMART"))
+wc <- tm_map(wc, removePunctuation)
+
+#wc <- gsub("zzz", "...", wc, fixed = TRUE)
+# output corpus as plain text doc
+wc <- tm_map(wc, PlainTextDocument)
+# wc <- tm_map(wc, stemDocument)
+
+#red
+png('mgs.png', units="in", width=10, height=10, res=750)
+wordcloud(wc, scale = c(8, 0.35), max.words=Inf, min.freq=5, 
+          rot.per=0.15, color=brewer.pal(9,"Reds")[(4:8)],
+          random.order=FALSE)
+dev.off()
+#blue
+png('mgs.png', units="in", width=10, height=10, res=750)
+wordcloud(wc, scale = c(8, 0.35), max.words=Inf, min.freq=5, 
+          rot.per=0.15, color=brewer.pal(9,"Blues")[-(1:4)],
+          random.order=FALSE)
+dev.off()
+
+## mgs2
+wc <- mgs2[,1]
+# fixed metal gear, and stemmed the word "weapons" and "bombs"
+wc <- gsub("Metal Gear", "metal_gear", wc, fixed = TRUE)
+wc <- gsub("weapons", "weapon", wc, fixed = TRUE)
+wc <- gsub("Weapons", "weapon", wc, fixed = TRUE)
+wc <- gsub("Bombs", "bomb", wc, fixed = TRUE)
+wc <- gsub("bombs", "bomb", wc, fixed = TRUE)
+# convert text into corpus
+wc <- Corpus(DataframeSource(as.matrix(wc)))
+# (for corpus text) convert to lowercase, remove punctuation, and drop stopwords.
+#test <- tm_map(test, function(x) removeWords(x,stopwords()))
+wc <- tm_map(wc, tolower)
+wc <- tm_map(wc, removeWords, stopwords("SMART"))
+wc <- tm_map(wc, removePunctuation)
+
+#wc <- gsub("zzz", "...", wc, fixed = TRUE)
+# output corpus as plain text doc
+wc <- tm_map(wc, PlainTextDocument)
+# wc <- tm_map(wc, stemDocument)
+
+# wordcloud!
+png('mgs2.png', units="in", width=10, height=10, res=750)
+wordcloud(wc, scale = c(8, 0.35), max.words=Inf, min.freq=5, 
+          rot.per=0.15, color=brewer.pal(9,"Blues")[-(1:4)],
+          random.order=FALSE)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+# if i wanted to add a regular expression ? to stop make nongreedy (made no difference)
+test <- mgs2[grep(": ", mgs2[,1]), ]
+test <- as.data.frame(test)    
+
+test <- mgs2[grep(": ?", mgs2[,1]), ]
+test <- as.data.frame(test)    
+
+
+comments_comp <- data[grep("website|computer|registration|register", data$comments), ]
+
+
+
+# write csv
+write.csv(mgsd1, append=FALSE, file = "output.csv", sep = ",", 
+          quote = TRUE, row.names = FALSE, col.names = TRUE, na="")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# fix column to be character
+mgsd1 <- as.data.frame(mgsd1)
+mgsd1$mgsd1 <- as.character(mgsd1$mgsd1)
+mgsd1 <- mgsd1 %>%
+  mutate(line = row_number())
+names(mgsd1) = c("text", "line")
+
+
+# separate each line into words
+mgs_tidy <- mgsd1 %>%
+  unnest_tokens(word, text)
+# remove stop words
+mgs_tidy <- mgs_tidy %>%
+  anti_join(stop_words)
+# count word frequency
+mgs_count <- mgs_tidy %>%
+  count(word, sort = TRUE)
+
+
+#####################
+# sentiment analysis for disc 1
+
+# sentiment score for bing lexicon
+bing <- sentiments %>%
+  filter(lexicon == "bing") %>%
+  select(-score)
+# join w/ mgs
+mgsentiment <- mgs_tidy %>%
+  inner_join(bing) %>% 
+#  count(book, index = linenumber %/% 80, sentiment) %>% 
+  spread(sentiment, n, fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+# graph
+ggplot(mgsentiment, aes(word, sentiment)) +
+  geom_bar(stat = "identity", show.legend = FALSE)
+
+
+#########################
+# network of words
+mgs_bigrams <- removePunctuation(mgsd1)
+mgs_bigrams <- textcnt(mgsd1, n = 2, method = "string",  
+                   split = "[[:space:]]+")
+mgs_bigrams <- mgs_bigrams[order(mgs_bigrams, decreasing = TRUE)]
+mgs_bigrams[1:200]
+
+mgs_count <- as.data.frame(mgs_bigrams)
+mgs_count <- mgs_count %>%
+  mutate(bigrams = row.names(mgs_count))
+names(mgs_count) <- c("count", "bigram")
+
+# split bigrams, join with mgs_count
+bi_split <- str_split_fixed(mgs_count[,2], " ", 2)
+mgs_count <- cbind(mgs_count, bi_split)
+# it worked! drop bigram column
+mgs_count <- mgs_count %>% 
+  select(-c(bigram))
+
+
+
+set.seed(1813)
+mgs_count %>%
+  filter(count >= 10) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n)) +
+  geom_node_point(color = "darkslategray4", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1.8) +
+  ggtitle(expression(paste("Word Network in Jane Austen's ", 
+                           italic("Pride and Prejudice")))) +
+  theme_void()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# I want to keep the excessive ellipses, so I will rename them
+mgsd1 <- gsub("...", "ZZZ", mgsd1, fixed = TRUE)
+# add spaces to separate all punctuation
+mgsd1 <- gsub(".", " . ", mgsd1, fixed = TRUE)
+mgsd1 <- gsub("!", " ! ", mgsd1, fixed = TRUE)
+mgsd1 <- gsub("?", " ? ", mgsd1, fixed = TRUE)
+mgsd1 <- gsub("ZZZ", " ... ", mgsd1, fixed = TRUE)
+
+# bigrams
+bigrams <- textcnt(mgsd1, n = 2, method = "string",  
+                  split = "[[:space:]]+")
+bigrams <- bigrams[order(bigrams, decreasing = TRUE)]
+bigrams[1:200]
+
+# make data frame
+nano <- data.frame(bigram = names(bigrams)) %>%
+  mutate(count = bigrams) %>%
+  mutate(prob = count/27931)
+
+
+
+
+
+
+
+
+
+library(extrafont)
+font_import()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# split so each string is a complete sentence
+mgsd1 <- unlist(strsplit(mgsd1, "(?<=[?.!])", perl=TRUE))
+mgsd1 <- unlist(strsplit(mgsd1, "(?<=ZZZ)", perl=TRUE))
+
+mgsd1 <- gsub(".", "  .", mgsd1, fixed = TRUE)
+mgsd1 <- gsub("!", "  !", mgsd1, fixed = TRUE)
+mgsd1 <- gsub("?", "  ?", mgsd1, fixed = TRUE)
+mgsd1 <- gsub("ZZZ", " ...", mgsd1, fixed = TRUE)
+# match beginning of string for a space and remove it, remove double spaces
+mgsd1 <- gsub("^ +", "", mgsd1)
+mgsd1 <- gsub("  ", " ", mgsd1)
+
+test <- 
+
+mgsd1
+
+
+test <- as.matrix(mgsd1)
+test <- test[grep("Hind",test)]
+test
+
+comments_comp <- data[grep("website|computer|registration|register", data$comments), ]
+
+
+
+
+
+
+
+
+# preserve punctuation before splitting
+mgsd1 <- gsub("...", " ... ", mgsd1, fixed=TRUE)
+
+
+
+test <- gsub(".", " . ", test, fixed=TRUE)
+test <- gsub("!", " ! ", test, fixed=TRUE)
+test <- gsub("?", " ? ", test, fixed=TRUE)
+
+
+# add a space at the end of each row
+#mgsd1 <- paste(mgsd1[,2], " ", sep="")
+
+
+
+# extracting bigrams and trigrams
+
+paste(mgsd1[,2], " ", sep="")
+
+
+gsub("[:alnum:][:punct:][:space:]", "[:space:]")
+
+bigrams = textcnt(mgsd1, n = 2, method = "string",  
+                   split = "[[:space:]]+")
+trigrams = textcnt(mgsd1, n = 3, method = "string",  
+                   split = "[[:space:]]+")
+bigrams = bigrams[order(bigrams, decreasing = TRUE)]
+bigrams[1:200]
+trigrams = trigrams[order(trigrams, decreasing = TRUE)]
+trigrams[1:20]
+
+
+
+
+
+
+#trigrams = textcnt(test, n = 3, method = "string",  
+#                   split = "[[:space:][:punct:][:digit:]]+")
+
+
+
+
+
+
+
+
+
+
+
+
+dtm <- DocumentTermMatrix(test)
+dtm <- as.matrix(dtm)
+#In the dtm object each row will be a doc, 
+#or a line of your original CSV file. Each column will be a word.
+
+
+
+
+
+
+
+
+
+
+
+
+
+# all text files are formatted roughly the same...
+# the address of each text starts with "0x...."
+# we can cull all the lines that contain this string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
